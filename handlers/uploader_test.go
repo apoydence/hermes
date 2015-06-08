@@ -17,12 +17,12 @@ var _ = Describe("Uploader", func() {
 	var (
 		uploader       *handlers.Uploader
 		recorder       *httptest.ResponseRecorder
-		mockKeyStorage mockKeyStorage
+		mockKeyStorage *handlers.KeyStorer
 	)
 
 	BeforeEach(func() {
 		recorder = httptest.NewRecorder()
-		mockKeyStorage = NewMockKeyStorage()
+		mockKeyStorage = handlers.NewKeyStorer()
 		uploader = handlers.NewUploader(mockKeyStorage)
 	})
 
@@ -44,11 +44,8 @@ var _ = Describe("Uploader", func() {
 			}()
 			var getReader io.Reader
 			getReaderFunc := func() io.Reader {
-				var ok bool
-				if getReader, ok = mockKeyStorage["some-key"]; ok {
-					return getReader
-				}
-				return nil
+				getReader = mockKeyStorage.Fetch("some-key")
+				return getReader
 			}
 			Eventually(getReaderFunc).ShouldNot(BeNil())
 			Consistently(serveDone).ShouldNot(BeClosed())
@@ -70,13 +67,13 @@ var _ = Describe("Uploader", func() {
 		})
 
 		It("Returns a StatusConflict if the key is taken", func() {
-			mockKeyStorage["some-key"] = ioutil.NopCloser(&bytes.Buffer{})
+			mockKeyStorage.Add("some-key", &bytes.Buffer{})
 			req, err := http.NewRequest("POST", "http://some.com", nil)
 			Expect(err).ToNot(HaveOccurred())
 			req.Header.Add("key", "some-key")
 			uploader.ServeHTTP(recorder, req)
 			Expect(recorder.Code).To(Equal(http.StatusConflict))
-			Expect(recorder.Body.Bytes()).To(Equal([]byte("Key already present")))
+			Expect(recorder.Body.Bytes()).To(Equal([]byte("The key some-key is already in use")))
 		})
 	})
 
