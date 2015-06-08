@@ -3,6 +3,7 @@ package handlers_test
 import (
 	"bytes"
 	"github.com/apoydence/hermes/handlers"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -26,20 +27,36 @@ var _ = Describe("Uploader", func() {
 	})
 
 	Context("Happy", func() {
-		It("Data passes through", func() {
+		It("Passes data through", func(done Done) {
+			defer close(done)
 			expectedData := []byte("Here is some data that is expected to flow through")
 			buf := bytes.NewBuffer(expectedData)
-			req, err := http.NewRequest("POST", "http://some.com", buf)
+			reader := NewMockReadCloser(buf, 1)
+			req, err := http.NewRequest("POST", "http://some.com", reader)
 			Expect(err).ToNot(HaveOccurred())
 			req.Header.Add("key", "some-key")
-			uploader.ServeHTTP(recorder, req)
-			Expect(recorder.Code).To(Equal(http.StatusOK))
-			getReader, ok := mockKeyStorage["some-key"]
-			Expect(ok).To(BeTrue())
-			Expect(getReader).ToNot(BeNil())
+			serveDone := make(chan struct{})
+			go func() {
+				defer GinkgoRecover()
+				defer close(serveDone)
+				uploader.ServeHTTP(recorder, req)
+				Expect(recorder.Code).To(Equal(http.StatusOK))
+			}()
+			var getReader io.Reader
+			getReaderFunc := func() io.Reader {
+				var ok bool
+				if getReader, ok = mockKeyStorage["some-key"]; ok {
+					return getReader
+				}
+				return nil
+			}
+			Eventually(getReaderFunc).ShouldNot(BeNil())
+			Consistently(serveDone).ShouldNot(BeClosed())
 			data, err := ioutil.ReadAll(getReader)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(data).To(Equal(expectedData))
+			Expect(reader.isClosed).To(BeTrue())
+			Eventually(serveDone).Should(BeClosed())
 		})
 	})
 

@@ -5,13 +5,13 @@ import (
 	"io"
 )
 
-type mockKeyStorage map[string]io.ReadCloser
+type mockKeyStorage map[string]io.Reader
 
 func NewMockKeyStorage() mockKeyStorage {
-	return make(map[string]io.ReadCloser)
+	return make(map[string]io.Reader)
 }
 
-func (m mockKeyStorage) Add(key string, data io.ReadCloser) error {
+func (m mockKeyStorage) Add(key string, data io.Reader) error {
 	if _, ok := m[key]; ok {
 		return errors.New("Key already present")
 	}
@@ -20,7 +20,7 @@ func (m mockKeyStorage) Add(key string, data io.ReadCloser) error {
 }
 
 func (m mockKeyStorage) Fetch(key string) io.Reader {
-	if c, ok := m[key]; !ok {
+	if c, ok := m[key]; ok {
 		return c
 	}
 	return nil

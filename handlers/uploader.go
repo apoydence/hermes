@@ -6,7 +6,7 @@ import (
 )
 
 type KeyStorage interface {
-	Add(key string, data io.ReadCloser) error
+	Add(key string, data io.Reader) error
 }
 
 type Uploader struct {
@@ -27,10 +27,13 @@ func (u *Uploader) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := u.keyStorage.Add(key, r.Body)
+	chReader := NewChannelReader(r.Body)
+	err := u.keyStorage.Add(key, chReader)
 	if err != nil {
 		w.WriteHeader(http.StatusConflict)
 		w.Write([]byte(err.Error()))
 		return
 	}
+	defer r.Body.Close()
+	chReader.Run()
 }
