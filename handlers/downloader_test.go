@@ -17,6 +17,7 @@ var _ = Describe("Downloader", func() {
 		mockKeyStorage mockKeyStorage
 		req            *http.Request
 		keyName        string
+		cookie         *http.Cookie
 	)
 
 	BeforeEach(func() {
@@ -25,24 +26,29 @@ var _ = Describe("Downloader", func() {
 		downloader = handlers.NewDownloader(mockKeyStorage)
 		recorder = httptest.NewRecorder()
 		req, _ = http.NewRequest("GET", "http://some.com", nil)
-		req.Header.Add("key", keyName)
+		cookie = &http.Cookie{
+			Name:  "key",
+			Value: keyName,
+		}
 	})
 
 	Context("Happy", func() {
 		It("Passes data through", func() {
+			req.AddCookie(cookie)
 			expectedData := []byte("here is some fake data")
 			buf := bytes.NewBuffer(expectedData)
 			mockKeyStorage[keyName] = buf
 			downloader.ServeHTTP(recorder, req)
 
 			Expect(recorder.Code).To(Equal(http.StatusOK))
+			contentType := recorder.HeaderMap.Get("Content-Type")
+			Expect(contentType).To(Equal("application/octet-stream"))
 			Expect(recorder.Body.Bytes()).To(Equal(expectedData))
 		})
 	})
 
 	Context("Unhappy", func() {
 		It("Returns StatusBadRequest if a key is not provided", func() {
-			req.Header.Del("key")
 			downloader.ServeHTTP(recorder, req)
 
 			Expect(recorder.Code).To(Equal(http.StatusBadRequest))
@@ -50,7 +56,7 @@ var _ = Describe("Downloader", func() {
 		})
 
 		It("Returns StatusNotFound if the provided key is not found", func() {
-			req.Header.Add("key", keyName)
+			req.AddCookie(cookie)
 			downloader.ServeHTTP(recorder, req)
 
 			Expect(recorder.Code).To(Equal(http.StatusNotFound))

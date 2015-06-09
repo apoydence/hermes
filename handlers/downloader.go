@@ -20,19 +20,20 @@ func NewDownloader(keyFetcher KeyFetcher) *Downloader {
 }
 
 func (d *Downloader) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	key := r.Header.Get("key")
-	if key == "" {
+	cookie, err := r.Cookie("key")
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Key header is required"))
 		return
 	}
 
-	reader := d.keyFetcher.Fetch(key)
+	reader := d.keyFetcher.Fetch(cookie.Value)
 	if reader == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/octet-stream")
 	buf := make([]byte, 1024)
 	for {
 		n, err := reader.Read(buf)
