@@ -44,3 +44,9 @@ func (k *KeyStorer) Fetch(key string) *ReadLocker {
 	}
 	return nil
 }
+
+func (k *KeyStorer) Delete(key string) {
+	k.rw.Lock()
+	defer k.rw.Unlock()
+	delete(k.keys, key)
+}

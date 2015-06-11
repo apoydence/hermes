@@ -7,6 +7,7 @@ import (
 
 type KeyStorage interface {
 	Add(key string, data io.Reader) error
+	Delete(key string)
 }
 
 type Uploader struct {
@@ -34,6 +35,7 @@ func (u *Uploader) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
+	defer u.keyStorage.Delete(key)
 	defer r.Body.Close()
 	chReader.Run()
 }

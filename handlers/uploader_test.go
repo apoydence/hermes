@@ -15,19 +15,19 @@ import (
 var _ = Describe("Uploader", func() {
 
 	var (
-		uploader       *handlers.Uploader
-		recorder       *httptest.ResponseRecorder
-		mockKeyStorage *handlers.KeyStorer
+		uploader   *handlers.Uploader
+		recorder   *httptest.ResponseRecorder
+		keyStorage *handlers.KeyStorer
 	)
 
 	BeforeEach(func() {
 		recorder = httptest.NewRecorder()
-		mockKeyStorage = handlers.NewKeyStorer()
-		uploader = handlers.NewUploader(mockKeyStorage)
+		keyStorage = handlers.NewKeyStorer()
+		uploader = handlers.NewUploader(keyStorage)
 	})
 
 	Context("Happy", func() {
-		It("Passes data through", func(done Done) {
+		It("Passes data through and deletes key afterwards", func(done Done) {
 			defer close(done)
 			expectedData := []byte("Here is some data that is expected to flow through")
 			buf := bytes.NewBuffer(expectedData)
@@ -44,7 +44,7 @@ var _ = Describe("Uploader", func() {
 			}()
 			var getReader io.Reader
 			getReaderFunc := func() io.Reader {
-				r := mockKeyStorage.Fetch("some-key")
+				r := keyStorage.Fetch("some-key")
 				if r != nil {
 					getReader = r.Reader
 				} else {
@@ -59,6 +59,7 @@ var _ = Describe("Uploader", func() {
 			Expect(data).To(Equal(expectedData))
 			Expect(reader.isClosed).To(BeTrue())
 			Eventually(serveDone).Should(BeClosed())
+			Expect(keyStorage.Fetch("some-key")).To(BeNil())
 		})
 	})
 
@@ -72,7 +73,7 @@ var _ = Describe("Uploader", func() {
 		})
 
 		It("Returns a StatusConflict if the key is taken", func() {
-			mockKeyStorage.Add("some-key", &bytes.Buffer{})
+			keyStorage.Add("some-key", &bytes.Buffer{})
 			req, err := http.NewRequest("POST", "http://some.com", nil)
 			Expect(err).ToNot(HaveOccurred())
 			req.Header.Add("key", "some-key")
