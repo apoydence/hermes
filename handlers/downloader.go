@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	"io"
 	"net/http"
 )
 
 type KeyFetcher interface {
-	Fetch(key string) io.Reader
+	Fetch(key string) *ReadLocker
 }
 
 type Downloader struct {
@@ -33,10 +32,16 @@ func (d *Downloader) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if ok := reader.Lock.TryLock(); !ok {
+		w.WriteHeader(http.StatusConflict)
+		return
+	}
+	defer reader.Lock.Unlock()
+
 	w.Header().Set("Content-Type", "application/octet-stream")
 	buf := make([]byte, 1024)
 	for {
-		n, err := reader.Read(buf)
+		n, err := reader.Reader.Read(buf)
 		if err != nil {
 			return
 		}

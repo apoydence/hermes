@@ -27,7 +27,11 @@ var _ = Describe("KeyStorage", func() {
 		}()
 
 		f := func() io.Reader {
-			return keyStorer.Fetch("some-key")
+			r := keyStorer.Fetch("some-key")
+			if r != nil {
+				return r.Reader
+			}
+			return nil
 		}
 		Eventually(f).Should(Equal(buf))
 	})

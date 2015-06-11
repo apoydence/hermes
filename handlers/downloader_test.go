@@ -37,7 +37,7 @@ var _ = Describe("Downloader", func() {
 			req.AddCookie(cookie)
 			expectedData := []byte("here is some fake data")
 			buf := bytes.NewBuffer(expectedData)
-			mockKeyStorage[keyName] = buf
+			mockKeyStorage.Add(keyName, buf)
 			downloader.ServeHTTP(recorder, req)
 
 			Expect(recorder.Code).To(Equal(http.StatusOK))
@@ -60,6 +60,18 @@ var _ = Describe("Downloader", func() {
 			downloader.ServeHTTP(recorder, req)
 
 			Expect(recorder.Code).To(Equal(http.StatusNotFound))
+		})
+
+		It("Returns a StatusConflict if the key is already being read from", func() {
+			req.AddCookie(cookie)
+			expectedData := []byte("here is some fake data")
+			buf := bytes.NewBuffer(expectedData)
+			mockKeyStorage.Add(keyName, buf)
+			ok := mockKeyStorage.Fetch(keyName).Lock.TryLock()
+
+			Expect(ok).To(BeTrue())
+			downloader.ServeHTTP(recorder, req)
+			Expect(recorder.Code).To(Equal(http.StatusConflict))
 		})
 	})
 

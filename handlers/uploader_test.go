@@ -44,7 +44,12 @@ var _ = Describe("Uploader", func() {
 			}()
 			var getReader io.Reader
 			getReaderFunc := func() io.Reader {
-				getReader = mockKeyStorage.Fetch("some-key")
+				r := mockKeyStorage.Fetch("some-key")
+				if r != nil {
+					getReader = r.Reader
+				} else {
+					getReader = nil
+				}
 				return getReader
 			}
 			Eventually(getReaderFunc).ShouldNot(BeNil())
