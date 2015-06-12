@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"io"
 	"net/http"
 )
 
@@ -19,6 +20,12 @@ func NewDownloader(keyFetcher KeyFetcher) *Downloader {
 }
 
 func (d *Downloader) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	notifier, ok := w.(http.CloseNotifier)
+	if !ok {
+		panic("ResponseWriter is not a CloseNotifier")
+	}
+	notify := notifier.CloseNotify()
+
 	cookie, err := r.Cookie("key")
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -39,12 +46,41 @@ func (d *Downloader) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer reader.Lock.Unlock()
 
 	w.Header().Set("Content-Type", "application/octet-stream")
-	buf := make([]byte, 1024)
+	dataCh := run(reader.Reader, notify)
 	for {
-		n, err := reader.Reader.Read(buf)
-		if err != nil {
+		select {
+		case <-notify:
 			return
+		case buf, ok := <-dataCh:
+			if !ok {
+				return
+			}
+			w.Write(buf)
 		}
-		w.Write(buf[:n])
+	}
+}
+
+func run(reader io.Reader, notify <-chan bool) <-chan []byte {
+	buf := make([]byte, 1024)
+	c := make(chan []byte)
+	go func() {
+		defer close(c)
+		for !isDone(notify) {
+			n, err := reader.Read(buf)
+			if err != nil {
+				return
+			}
+			c <- buf[:n]
+		}
+	}()
+	return c
+}
+
+func isDone(c <-chan bool) bool {
+	select {
+	case <-c:
+		return true
+	default:
+		return false
 	}
 }

@@ -3,8 +3,8 @@ package handlers_test
 import (
 	"bytes"
 	"github.com/apoydence/hermes/handlers"
+	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,7 +13,7 @@ import (
 var _ = Describe("Downloader", func() {
 	var (
 		downloader     *handlers.Downloader
-		recorder       *httptest.ResponseRecorder
+		recorder       *recorderNotifier
 		mockKeyStorage mockKeyStorage
 		req            *http.Request
 		keyName        string
@@ -24,7 +24,7 @@ var _ = Describe("Downloader", func() {
 		keyName = "some-key"
 		mockKeyStorage = NewMockKeyStorage()
 		downloader = handlers.NewDownloader(mockKeyStorage)
-		recorder = httptest.NewRecorder()
+		recorder = newRecorderNotifier()
 		req, _ = http.NewRequest("GET", "http://some.com", nil)
 		cookie = &http.Cookie{
 			Name:  "key",
@@ -35,7 +35,11 @@ var _ = Describe("Downloader", func() {
 	Context("Happy", func() {
 		It("Passes data through", func() {
 			req.AddCookie(cookie)
-			expectedData := []byte("here is some fake data")
+			var expectedData []byte
+			for i := 0; i < 2048; i++ {
+				expectedData = append(expectedData, byte(i))
+			}
+
 			buf := bytes.NewBuffer(expectedData)
 			mockKeyStorage.Add(keyName, buf)
 			downloader.ServeHTTP(recorder, req)
@@ -44,6 +48,23 @@ var _ = Describe("Downloader", func() {
 			contentType := recorder.HeaderMap.Get("Content-Type")
 			Expect(contentType).To(Equal("application/octet-stream"))
 			Expect(recorder.Body.Bytes()).To(Equal(expectedData))
+		})
+
+		It("Stops downloading if the notify channel is written to", func() {
+			req.AddCookie(cookie)
+			expectedData := []byte("here is some fake data")
+			buf := bytes.NewBuffer(expectedData)
+			chReader := handlers.NewChannelReader(ioutil.NopCloser(buf))
+			mockKeyStorage.Add(keyName, chReader)
+			doneCh := make(chan struct{})
+			go func() {
+				defer GinkgoRecover()
+				defer close(doneCh)
+				downloader.ServeHTTP(recorder, req)
+			}()
+
+			recorder.notifyCh <- true
+			Eventually(doneCh).Should(BeClosed())
 		})
 	})
 
