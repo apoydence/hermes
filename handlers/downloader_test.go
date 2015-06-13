@@ -33,7 +33,8 @@ var _ = Describe("Downloader", func() {
 	})
 
 	Context("Happy", func() {
-		It("Passes data through", func() {
+		It("Passes data through", func(done Done) {
+			defer close(done)
 			req.AddCookie(cookie)
 			var expectedData []byte
 			for i := 0; i < 2048; i++ {

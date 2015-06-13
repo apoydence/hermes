@@ -70,7 +70,11 @@ func run(reader io.Reader, notify <-chan bool) <-chan []byte {
 			if err != nil {
 				return
 			}
-			c <- buf[:n]
+			newBuf := make([]byte, n)
+			for i := 0; i < n; i++ {
+				newBuf[i] = buf[i]
+			}
+			c <- newBuf
 		}
 	}()
 	return c
