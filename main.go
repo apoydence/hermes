@@ -3,11 +3,12 @@ package main
 import (
 	"github.com/apoydence/hermes/handlers"
 	"net/http"
+	"time"
 )
 
 func main() {
 	keyStorer := handlers.NewKeyStorer()
-	uploader := handlers.NewUploader(keyStorer)
+	uploader := handlers.NewUploader(keyStorer, 30*time.Second)
 	downloader := handlers.NewDownloader(keyStorer)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {

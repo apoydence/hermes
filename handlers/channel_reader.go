@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"io"
+	"time"
 )
 
 type channelReader struct {
@@ -34,17 +35,24 @@ func (c *channelReader) Read(buffer []byte) (int, error) {
 	return i, nil
 }
 
-func (c *channelReader) Run() {
+func (c *channelReader) Run(timeout time.Duration) {
 	defer c.reader.Close()
 	defer close(c.channel)
 	buffer := make([]byte, 1024)
+	timer := time.NewTimer(timeout)
 	for {
 		i, err := c.reader.Read(buffer)
 		if err != nil {
 			return
 		}
+
 		for j := 0; j < i; j++ {
-			c.channel <- buffer[j]
+			select {
+			case <-timer.C:
+				return
+			case c.channel <- buffer[j]:
+				timer.Reset(timeout)
+			}
 		}
 	}
 }

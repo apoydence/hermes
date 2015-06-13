@@ -43,6 +43,7 @@ var _ = Describe("Downloader", func() {
 			buf := bytes.NewBuffer(expectedData)
 			mockKeyStorage.Add(keyName, buf)
 			downloader.ServeHTTP(recorder, req)
+			recorder.notifyCh <- true
 
 			Expect(recorder.Code).To(Equal(http.StatusOK))
 			contentType := recorder.HeaderMap.Get("Content-Type")

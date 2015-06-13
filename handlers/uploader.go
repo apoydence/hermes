@@ -3,6 +3,7 @@ package handlers
 import (
 	"io"
 	"net/http"
+	"time"
 )
 
 type KeyStorage interface {
@@ -12,11 +13,13 @@ type KeyStorage interface {
 
 type Uploader struct {
 	keyStorage KeyStorage
+	timeout    time.Duration
 }
 
-func NewUploader(keyStorage KeyStorage) *Uploader {
+func NewUploader(keyStorage KeyStorage, timeout time.Duration) *Uploader {
 	return &Uploader{
 		keyStorage: keyStorage,
+		timeout:    timeout,
 	}
 }
 
@@ -37,5 +40,5 @@ func (u *Uploader) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer u.keyStorage.Delete(key)
 	defer r.Body.Close()
-	chReader.Run()
+	chReader.Run(u.timeout)
 }

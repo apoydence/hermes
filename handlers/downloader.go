@@ -61,10 +61,10 @@ func (d *Downloader) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func run(reader io.Reader, notify <-chan bool) <-chan []byte {
-	buf := make([]byte, 1024)
 	c := make(chan []byte)
 	go func() {
 		defer close(c)
+		buf := make([]byte, 1024)
 		for !isDone(notify) {
 			n, err := reader.Read(buf)
 			if err != nil {
