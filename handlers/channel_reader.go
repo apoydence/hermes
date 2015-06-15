@@ -42,7 +42,7 @@ func (c *channelReader) Run(timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	for {
 		i, err := c.reader.Read(buffer)
-		if err != nil {
+		if err != nil && (err != io.EOF || i == 0) {
 			return
 		}
 
