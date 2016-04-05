@@ -1,6 +1,6 @@
 [submodule "src/github.com/codegangsta/cli"]
 	path = src/github.com/codegangsta/cli
-	url = https://github.com/codegangsta/cli.git
+	url = https://github.com/codegangsta/cli
 [submodule "src/github.com/gorilla/websocket"]
 	path = src/github.com/gorilla/websocket
 	url = https://github.com/gorilla/websocket.git
@@ -28,3 +28,51 @@
 [submodule "src/github.com/onsi/ginkgo"]
 	path = src/github.com/onsi/ginkgo
 	url = https://github.com/onsi/ginkgo
+[submodule "src/github.com/alecthomas/gometalinter"]
+	path = src/github.com/alecthomas/gometalinter
+	url = https://github.com/alecthomas/gometalinter.git
+[submodule "src/github.com/alecthomas/template"]
+	path = src/github.com/alecthomas/template
+	url = https://github.com/alecthomas/template.git
+[submodule "src/github.com/alecthomas/units"]
+	path = src/github.com/alecthomas/units
+	url = https://github.com/alecthomas/units.git
+[submodule "src/github.com/golang/lint"]
+	path = src/github.com/golang/lint
+	url = https://github.com/golang/lint.git
+[submodule "src/github.com/google/shlex"]
+	path = src/github.com/google/shlex
+	url = https://github.com/google/shlex.git
+[submodule "src/github.com/jstemmer/gotags"]
+	path = src/github.com/jstemmer/gotags
+	url = https://github.com/jstemmer/gotags.git
+[submodule "src/github.com/kisielk/errcheck"]
+	path = src/github.com/kisielk/errcheck
+	url = https://github.com/kisielk/errcheck.git
+[submodule "src/github.com/kisielk/gotool"]
+	path = src/github.com/kisielk/gotool
+	url = https://github.com/kisielk/gotool.git
+[submodule "src/github.com/klauspost/asmfmt"]
+	path = src/github.com/klauspost/asmfmt
+	url = https://github.com/klauspost/asmfmt.git
+[submodule "src/github.com/nsf/gocode"]
+	path = src/github.com/nsf/gocode
+	url = https://github.com/nsf/gocode.git
+[submodule "src/github.com/onsi/gomega"]
+	path = src/github.com/onsi/gomega
+	url = https://github.com/onsi/gomega.git
+[submodule "src/github.com/rogpeppe/godef"]
+	path = src/github.com/rogpeppe/godef
+	url = https://github.com/rogpeppe/godef.git
+[submodule "src/github.com/spf13/cobra"]
+	path = src/github.com/spf13/cobra
+	url = https://github.com/spf13/cobra.git
+[submodule "src/github.com/spf13/pflag"]
+	path = src/github.com/spf13/pflag
+	url = https://github.com/spf13/pflag.git
+[submodule "src/golang.org/x/tools"]
+	path = src/golang.org/x/tools
+	url = https://golang.org/x/tools.git
+[submodule "src/gopkg.in/alecthomas/kingpin.v2"]
+	path = src/gopkg.in/alecthomas/kingpin.v2
+	url = https://gopkg.in/alecthomas/kingpin.v2.git
