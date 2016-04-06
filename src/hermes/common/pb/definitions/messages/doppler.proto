@@ -1,0 +1,17 @@
+package messages;
+
+message Doppler{
+  enum MessageType{
+    DataPoint = 1;
+  }
+
+	required uint64 muxId = 1;
+	required MessageType messageType = 2;
+
+	optional DataPoint dataPoint = 3;
+}
+
+message DataPoint{
+	required string id = 1;
+	required bytes data = 2;
+}
