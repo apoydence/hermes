@@ -1,8 +1,10 @@
 package emitter_test
 
 import (
+	"hermes/internal/datastructures"
 	"hermes/internal/emitter"
 	"hermes/internal/tcwriter"
+	"unsafe"
 
 	. "github.com/apoydence/eachers"
 	. "github.com/onsi/ginkgo"
@@ -13,7 +15,7 @@ var _ = Describe("Generator", func() {
 	var (
 		generator *emitter.Generator
 
-		linkedLists   chan *emitter.LinkedList
+		linkedLists   chan *datastructures.LinkedList
 		senderStores  chan emitter.SenderStore
 		eventEmitters chan *emitter.SubscriptionListReader
 		muxIds        chan uint64
@@ -26,8 +28,8 @@ var _ = Describe("Generator", func() {
 		expectedId string
 	)
 
-	var origLinkedList = emitter.NewLinkedList
-	var hijackLinkedList = func() *emitter.LinkedList {
+	var origLinkedList = datastructures.NewLinkedList
+	var hijackLinkedList = func() *datastructures.LinkedList {
 		result := origLinkedList()
 		linkedLists <- result
 		return result
@@ -56,7 +58,7 @@ var _ = Describe("Generator", func() {
 	}
 
 	BeforeEach(func() {
-		emitter.NewLinkedList = hijackLinkedList
+		datastructures.NewLinkedList = hijackLinkedList
 		emitter.NewSubscriptionListReader = hijackedSubscriptionListReader
 		tcwriter.NewEmitter = hijackedTcEmitter
 		tcwriter.New = hijackedNewTcWriter
@@ -65,7 +67,7 @@ var _ = Describe("Generator", func() {
 
 		generator = emitter.NewGenerator(mockKvStore)
 
-		linkedLists = make(chan *emitter.LinkedList, 100)
+		linkedLists = make(chan *datastructures.LinkedList, 100)
 		senderStores = make(chan emitter.SenderStore, 100)
 		eventEmitters = make(chan *emitter.SubscriptionListReader, 100)
 		muxIds = make(chan uint64, 100)
@@ -77,7 +79,7 @@ var _ = Describe("Generator", func() {
 	})
 
 	AfterEach(func() {
-		emitter.NewLinkedList = origLinkedList
+		datastructures.NewLinkedList = origLinkedList
 		emitter.NewSubscriptionListReader = origSubscriptionListReader
 		tcwriter.NewEmitter = origNewTcEmitter
 		tcwriter.New = origNewTcWriter
@@ -97,7 +99,7 @@ var _ = Describe("Generator", func() {
 			It("creates a new SubscriptionListReader with the linked list", func() {
 				generator.Fetch(expectedId)
 
-				var ll *emitter.LinkedList
+				var ll *datastructures.LinkedList
 				Expect(linkedLists).To(Receive(&ll))
 				Expect(senderStores).To(BeCalled(With(ll)))
 			})
@@ -116,15 +118,15 @@ var _ = Describe("Generator", func() {
 		Context("tcwriter construction does not return an error", func() {
 			var (
 				callback   func(URL string, muxId uint64)
-				linkedList *emitter.LinkedList
+				linkedList *datastructures.LinkedList
 
 				expectedURL   string
 				expectedMuxId uint64
 			)
 
-			var listLen = func(ll *emitter.LinkedList) int {
+			var listLen = func(ll *datastructures.LinkedList) int {
 				var count int
-				ll.Traverse(func(emitter.Emitter) {
+				ll.Traverse(func(unsafe.Pointer) {
 					count++
 				})
 

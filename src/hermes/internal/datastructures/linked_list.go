@@ -1,4 +1,4 @@
-package emitter
+package datastructures
 
 import (
 	"sync/atomic"
@@ -11,14 +11,14 @@ type LinkedList struct {
 
 type node struct {
 	next  unsafe.Pointer //*node
-	value Emitter
+	value unsafe.Pointer
 }
 
 var NewLinkedList = func() *LinkedList {
 	return new(LinkedList)
 }
 
-func (l *LinkedList) Traverse(callback func(Emitter)) {
+func (l *LinkedList) Traverse(callback func(unsafe.Pointer)) {
 	root := l.loadRoot()
 	if root == nil {
 		return
@@ -30,7 +30,7 @@ func (l *LinkedList) Traverse(callback func(Emitter)) {
 	}
 }
 
-func (l *LinkedList) Append(value Emitter) {
+func (l *LinkedList) Append(value unsafe.Pointer) {
 	newNode := unsafe.Pointer(&node{
 		value: value,
 	})
@@ -45,7 +45,7 @@ func (l *LinkedList) Append(value Emitter) {
 	l.storeNext(last, newNode)
 }
 
-//func (l *LinkedList) Remove(value Emitter) {
+//func (l *LinkedList) Remove(value unsafe.Pointer) {
 //	if l.root == nil {
 //		return
 //	}
@@ -67,7 +67,7 @@ func (l *LinkedList) loadRoot() unsafe.Pointer {
 	return atomic.LoadPointer(&l.root)
 }
 
-func (l *LinkedList) extractValue(value unsafe.Pointer) Emitter {
+func (l *LinkedList) extractValue(value unsafe.Pointer) unsafe.Pointer {
 	return (*node)(value).value
 }
 
@@ -79,7 +79,7 @@ func (l *LinkedList) storeNext(value, next unsafe.Pointer) {
 	atomic.StorePointer(&(*node)(value).next, next)
 }
 
-func (l *LinkedList) findLast(current unsafe.Pointer, callback func(Emitter)) unsafe.Pointer {
+func (l *LinkedList) findLast(current unsafe.Pointer, callback func(unsafe.Pointer)) unsafe.Pointer {
 	currentNode := (*node)(current)
 	next := l.loadNext(current)
 	if next == nil {
@@ -93,7 +93,7 @@ func (l *LinkedList) findLast(current unsafe.Pointer, callback func(Emitter)) un
 	return l.findLast(next, callback)
 }
 
-// func (l *LinkedList) findParent(value Emitter, current unsafe.Pointer) unsafe.Pointer {
+// func (l *LinkedList) findParent(value unsafe.Pointer, current unsafe.Pointer) unsafe.Pointer {
 // 	currentNode := (*node)(current)
 // 	if atomic.LoadPointer(&current) == nil || atomic.LoadPointer(&currentNode.next) == nil {
 // 		return nil

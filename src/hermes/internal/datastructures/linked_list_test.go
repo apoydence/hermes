@@ -1,9 +1,10 @@
 //go:generate hel
-package emitter_test
+package datastructures_test
 
 import (
-	"hermes/internal/emitter"
+	"hermes/internal/datastructures"
 	"sync"
+	"unsafe"
 
 	. "github.com/apoydence/eachers"
 
@@ -11,29 +12,36 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+type someInterface interface {
+}
+
+type someStruct struct {
+}
+
 var _ = Describe("LinkedList", func() {
 	var (
-		callbackValues chan emitter.Emitter
-		list           *emitter.LinkedList
+		callbackValues chan someInterface
+		list           *datastructures.LinkedList
 
-		emitter1 *mockEmitter
-		emitter2 *mockEmitter
-		emitter3 *mockEmitter
-		emitter4 *mockEmitter
+		emitter1 someInterface
+		emitter2 someInterface
+		emitter3 someInterface
+		emitter4 someInterface
 	)
 
-	var callback = func(value emitter.Emitter) {
-		callbackValues <- value
+	var callback = func(value unsafe.Pointer) {
+		casted := *(*someInterface)(value)
+		callbackValues <- casted
 	}
 
 	BeforeEach(func() {
-		callbackValues = make(chan emitter.Emitter, 100)
-		list = emitter.NewLinkedList()
+		callbackValues = make(chan someInterface, 100)
+		list = datastructures.NewLinkedList()
 
-		emitter1 = newMockEmitter()
-		emitter2 = newMockEmitter()
-		emitter3 = newMockEmitter()
-		emitter4 = newMockEmitter()
+		emitter1 = new(someStruct)
+		emitter2 = new(someStruct)
+		emitter3 = new(someStruct)
+		emitter4 = new(someStruct)
 	})
 
 	Describe("Traverse()", func() {
@@ -47,12 +55,12 @@ var _ = Describe("LinkedList", func() {
 
 				Context("single entry", func() {
 					var (
-						expectedValue emitter.Emitter
+						expectedValue someInterface
 					)
 
 					BeforeEach(func() {
 						expectedValue = emitter1
-						list.Append(expectedValue)
+						list.Append(unsafe.Pointer(&expectedValue))
 					})
 
 					It("invokes the callback only once", func() {
@@ -69,13 +77,13 @@ var _ = Describe("LinkedList", func() {
 
 					Context("multiple entries", func() {
 						var (
-							expectedValues []emitter.Emitter
+							expectedValues []someInterface
 						)
 
 						BeforeEach(func() {
-							expectedValues = []emitter.Emitter{emitter2, emitter3, emitter4}
+							expectedValues = []someInterface{emitter2, emitter3, emitter4}
 							for _, value := range expectedValues {
-								list.Append(value)
+								list.Append(unsafe.Pointer(&value))
 							}
 						})
 
@@ -224,7 +232,7 @@ var _ = Describe("LinkedList", func() {
 		)
 
 		var write = func() {
-			emitters := []emitter.Emitter{
+			emitters := []someInterface{
 				emitter1,
 				emitter2,
 				emitter3,
@@ -232,7 +240,8 @@ var _ = Describe("LinkedList", func() {
 			}
 			defer wg.Done()
 			for i := 0; i < count; i++ {
-				list.Append(emitters[i%len(emitters)])
+				value := emitters[i%len(emitters)]
+				list.Append(unsafe.Pointer(&value))
 			}
 		}
 
@@ -246,7 +255,7 @@ var _ = Describe("LinkedList", func() {
 		var read = func() {
 			defer wg.Done()
 			for i := 0; i < count; i++ {
-				list.Traverse(func(emitter.Emitter) {})
+				list.Traverse(func(unsafe.Pointer) {})
 			}
 		}
 

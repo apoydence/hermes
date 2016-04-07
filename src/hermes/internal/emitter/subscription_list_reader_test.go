@@ -4,6 +4,7 @@ package emitter_test
 import (
 	"hermes/common/pb/messages"
 	"hermes/internal/emitter"
+	"unsafe"
 
 	. "github.com/apoydence/eachers"
 	"github.com/gogo/protobuf/proto"
@@ -42,10 +43,11 @@ var _ = Describe("StoreReader", func() {
 		It("sends each sender the expected data", func() {
 			subscriptionReader.Emit(expextedData)
 
-			var callback func(emitter.Emitter)
+			var callback func(unsafe.Pointer)
 			Expect(mockSenderStore.TraverseInput.Callback).To(Receive(&callback))
-			callback(mockEmitter)
-			callback(mockEmitter)
+			var e emitter.Emitter = mockEmitter
+			callback(unsafe.Pointer(&e))
+			callback(unsafe.Pointer(&e))
 
 			Expect(mockEmitter.EmitInput.Data).To(EqualEach(expextedData, expextedData))
 		})

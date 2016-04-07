@@ -1,6 +1,10 @@
 package emitter
 
-import "hermes/internal/tcwriter"
+import (
+	"hermes/internal/datastructures"
+	"hermes/internal/tcwriter"
+	"unsafe"
+)
 
 type KvStore interface {
 	ListenFor(id string, callback func(URL string, muxId uint64))
@@ -17,13 +21,15 @@ func NewGenerator(kvstore KvStore) *Generator {
 }
 
 func (g *Generator) Fetch(id string) Emitter {
-	ll := NewLinkedList()
+	ll := datastructures.NewLinkedList()
 	g.kvstore.ListenFor(id, func(URL string, muxId uint64) {
 		connWriter, err := tcwriter.New(URL)
 		if err != nil {
 			panic(err)
 		}
-		ll.Append(tcwriter.NewEmitter(muxId, connWriter))
+
+		var emitter Emitter = tcwriter.NewEmitter(muxId, connWriter)
+		ll.Append(unsafe.Pointer(&emitter))
 	})
 
 	return NewSubscriptionListReader(ll)

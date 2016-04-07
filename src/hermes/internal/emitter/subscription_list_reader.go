@@ -1,9 +1,12 @@
 package emitter
 
-import "hermes/common/pb/messages"
+import (
+	"hermes/common/pb/messages"
+	"unsafe"
+)
 
 type SenderStore interface {
-	Traverse(callback func(sender Emitter))
+	Traverse(callback func(sender unsafe.Pointer))
 }
 
 type SubscriptionListReader struct {
@@ -17,8 +20,9 @@ var NewSubscriptionListReader = func(senderStore SenderStore) *SubscriptionListR
 }
 
 func (r *SubscriptionListReader) Emit(data *messages.DataPoint) error {
-	r.senderStore.Traverse(func(sender Emitter) {
-		sender.Emit(data)
+	r.senderStore.Traverse(func(sender unsafe.Pointer) {
+		emitter := *(*Emitter)(sender)
+		emitter.Emit(data)
 	})
 	return nil
 }

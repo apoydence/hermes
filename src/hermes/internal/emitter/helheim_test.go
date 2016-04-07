@@ -3,6 +3,7 @@ package emitter_test
 import (
 	"hermes/common/pb/messages"
 	"hermes/internal/emitter"
+	"unsafe"
 )
 
 type mockKvStore struct {
@@ -29,17 +30,17 @@ func (m *mockKvStore) ListenFor(id string, callback func(URL string, muxId uint6
 type mockSenderStore struct {
 	TraverseCalled chan bool
 	TraverseInput  struct {
-		Callback chan func(sender emitter.Emitter)
+		Callback chan func(sender unsafe.Pointer)
 	}
 }
 
 func newMockSenderStore() *mockSenderStore {
 	m := &mockSenderStore{}
 	m.TraverseCalled = make(chan bool, 100)
-	m.TraverseInput.Callback = make(chan func(sender emitter.Emitter), 100)
+	m.TraverseInput.Callback = make(chan func(sender unsafe.Pointer), 100)
 	return m
 }
-func (m *mockSenderStore) Traverse(callback func(sender emitter.Emitter)) {
+func (m *mockSenderStore) Traverse(callback func(sender unsafe.Pointer)) {
 	m.TraverseCalled <- true
 	m.TraverseInput.Callback <- callback
 }
