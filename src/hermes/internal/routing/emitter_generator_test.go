@@ -1,8 +1,8 @@
 package routing_test
 
 import (
-	"hermes/doppler/internal/routing"
-	"hermes/doppler/internal/tcwriter"
+	"hermes/internal/routing"
+	"hermes/internal/tcwriter"
 
 	. "github.com/apoydence/eachers"
 	. "github.com/onsi/ginkgo"

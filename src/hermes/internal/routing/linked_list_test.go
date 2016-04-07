@@ -2,7 +2,7 @@
 package routing_test
 
 import (
-	"hermes/doppler/internal/routing"
+	"hermes/internal/routing"
 	"sync"
 
 	. "github.com/apoydence/eachers"

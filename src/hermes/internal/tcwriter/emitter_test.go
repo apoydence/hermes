@@ -4,7 +4,7 @@ package tcwriter_test
 import (
 	"fmt"
 	"hermes/common/pb/messages"
-	"hermes/doppler/internal/tcwriter"
+	"hermes/internal/tcwriter"
 
 	. "github.com/apoydence/eachers"
 	"github.com/gogo/protobuf/proto"

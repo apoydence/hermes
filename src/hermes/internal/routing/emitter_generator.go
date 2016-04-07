@@ -1,6 +1,6 @@
 package routing
 
-import "hermes/doppler/internal/tcwriter"
+import "hermes/internal/tcwriter"
 
 type KvStore interface {
 	ListenFor(id string, callback func(URL string, muxId uint64))

@@ -3,7 +3,7 @@ package integration_test
 import (
 	"fmt"
 	"hermes/common/pb/messages"
-	"hermes/doppler/internal/routing"
+	"hermes/internal/routing"
 	"net/http"
 	"net/http/httptest"
 	"sync"

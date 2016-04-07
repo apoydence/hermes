@@ -2,7 +2,7 @@ package routing_test
 
 import (
 	"hermes/common/pb/messages"
-	"hermes/doppler/internal/routing"
+	"hermes/internal/routing"
 )
 
 type mockKvStore struct {

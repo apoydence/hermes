@@ -1,7 +1,7 @@
 package routing_test
 
 import (
-	"hermes/doppler/internal/routing"
+	"hermes/internal/routing"
 
 	. "github.com/apoydence/eachers"
 	. "github.com/onsi/ginkgo"

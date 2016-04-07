@@ -3,7 +3,7 @@ package routing_test
 
 import (
 	"hermes/common/pb/messages"
-	"hermes/doppler/internal/routing"
+	"hermes/internal/routing"
 
 	. "github.com/apoydence/eachers"
 	"github.com/gogo/protobuf/proto"
