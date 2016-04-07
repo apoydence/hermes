@@ -1,4 +1,4 @@
-package routing
+package emitter
 
 import "hermes/internal/tcwriter"
 
@@ -6,17 +6,17 @@ type KvStore interface {
 	ListenFor(id string, callback func(URL string, muxId uint64))
 }
 
-type EmitterGenerator struct {
+type Generator struct {
 	kvstore KvStore
 }
 
-func NewEmitterGenerator(kvstore KvStore) *EmitterGenerator {
-	return &EmitterGenerator{
+func NewGenerator(kvstore KvStore) *Generator {
+	return &Generator{
 		kvstore: kvstore,
 	}
 }
 
-func (g *EmitterGenerator) Fetch(id string) Emitter {
+func (g *Generator) Fetch(id string) Emitter {
 	ll := NewLinkedList()
 	g.kvstore.ListenFor(id, func(URL string, muxId uint64) {
 		connWriter, err := tcwriter.New(URL)
@@ -26,5 +26,5 @@ func (g *EmitterGenerator) Fetch(id string) Emitter {
 		ll.Append(tcwriter.NewEmitter(muxId, connWriter))
 	})
 
-	return NewEventEmitter(ll)
+	return NewSubscriptionListReader(ll)
 }

@@ -1,8 +1,8 @@
 //go:generate hel
-package routing_test
+package emitter_test
 
 import (
-	"hermes/internal/routing"
+	"hermes/internal/emitter"
 	"sync"
 
 	. "github.com/apoydence/eachers"
@@ -13,8 +13,8 @@ import (
 
 var _ = Describe("LinkedList", func() {
 	var (
-		callbackValues chan routing.Emitter
-		list           *routing.LinkedList
+		callbackValues chan emitter.Emitter
+		list           *emitter.LinkedList
 
 		emitter1 *mockEmitter
 		emitter2 *mockEmitter
@@ -22,13 +22,13 @@ var _ = Describe("LinkedList", func() {
 		emitter4 *mockEmitter
 	)
 
-	var callback = func(value routing.Emitter) {
+	var callback = func(value emitter.Emitter) {
 		callbackValues <- value
 	}
 
 	BeforeEach(func() {
-		callbackValues = make(chan routing.Emitter, 100)
-		list = routing.NewLinkedList()
+		callbackValues = make(chan emitter.Emitter, 100)
+		list = emitter.NewLinkedList()
 
 		emitter1 = newMockEmitter()
 		emitter2 = newMockEmitter()
@@ -47,7 +47,7 @@ var _ = Describe("LinkedList", func() {
 
 				Context("single entry", func() {
 					var (
-						expectedValue routing.Emitter
+						expectedValue emitter.Emitter
 					)
 
 					BeforeEach(func() {
@@ -69,11 +69,11 @@ var _ = Describe("LinkedList", func() {
 
 					Context("multiple entries", func() {
 						var (
-							expectedValues []routing.Emitter
+							expectedValues []emitter.Emitter
 						)
 
 						BeforeEach(func() {
-							expectedValues = []routing.Emitter{emitter2, emitter3, emitter4}
+							expectedValues = []emitter.Emitter{emitter2, emitter3, emitter4}
 							for _, value := range expectedValues {
 								list.Append(value)
 							}
@@ -224,7 +224,7 @@ var _ = Describe("LinkedList", func() {
 		)
 
 		var write = func() {
-			emitters := []routing.Emitter{
+			emitters := []emitter.Emitter{
 				emitter1,
 				emitter2,
 				emitter3,
@@ -246,7 +246,7 @@ var _ = Describe("LinkedList", func() {
 		var read = func() {
 			defer wg.Done()
 			for i := 0; i < count; i++ {
-				list.Traverse(func(routing.Emitter) {})
+				list.Traverse(func(emitter.Emitter) {})
 			}
 		}
 

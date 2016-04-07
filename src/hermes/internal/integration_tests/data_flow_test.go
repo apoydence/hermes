@@ -3,7 +3,7 @@ package integration_test
 import (
 	"fmt"
 	"hermes/common/pb/messages"
-	"hermes/internal/routing"
+	"hermes/internal/emitter"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -23,9 +23,9 @@ var _ = Describe("DataFlow", func() {
 		mockWaitReporter *mockWaitReporter
 		mockKvStore      *mockKvStore
 
-		router    *routing.Router
-		cache     *routing.EmitterCache
-		generator *routing.EmitterGenerator
+		dataSourceReader *emitter.DataSourceReader
+		cache            *emitter.Cache
+		generator        *emitter.Generator
 
 		dopplerMessages chan *messages.Doppler
 		conns           chan *websocket.Conn
@@ -69,9 +69,9 @@ var _ = Describe("DataFlow", func() {
 		mockWaitReporter = newMockWaitReporter()
 		mockKvStore = newMockKvStore()
 
-		generator = routing.NewEmitterGenerator(mockKvStore)
-		cache = routing.NewEmitterCache(generator)
-		router = routing.New(mockDataSource, mockWaitReporter, cache)
+		generator = emitter.NewGenerator(mockKvStore)
+		cache = emitter.NewCache(generator)
+		dataSourceReader = emitter.NewDataSourceReader(mockDataSource, mockWaitReporter, cache)
 	})
 
 	AfterEach(func() {

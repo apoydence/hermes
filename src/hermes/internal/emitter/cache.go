@@ -1,18 +1,18 @@
-package routing
+package emitter
 
-type EmitterCache struct {
+type Cache struct {
 	factory EmitterFetcher
 	cache   map[string]Emitter
 }
 
-func NewEmitterCache(factory EmitterFetcher) *EmitterCache {
-	return &EmitterCache{
+func NewCache(factory EmitterFetcher) *Cache {
+	return &Cache{
 		factory: factory,
 		cache:   make(map[string]Emitter),
 	}
 }
 
-func (c *EmitterCache) Fetch(id string) Emitter {
+func (c *Cache) Fetch(id string) Emitter {
 	if emitter, ok := c.cache[id]; ok {
 		return emitter
 	}

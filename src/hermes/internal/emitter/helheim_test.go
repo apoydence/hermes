@@ -1,8 +1,8 @@
-package routing_test
+package emitter_test
 
 import (
 	"hermes/common/pb/messages"
-	"hermes/internal/routing"
+	"hermes/internal/emitter"
 )
 
 type mockKvStore struct {
@@ -29,17 +29,17 @@ func (m *mockKvStore) ListenFor(id string, callback func(URL string, muxId uint6
 type mockSenderStore struct {
 	TraverseCalled chan bool
 	TraverseInput  struct {
-		Callback chan func(sender routing.Emitter)
+		Callback chan func(sender emitter.Emitter)
 	}
 }
 
 func newMockSenderStore() *mockSenderStore {
 	m := &mockSenderStore{}
 	m.TraverseCalled = make(chan bool, 100)
-	m.TraverseInput.Callback = make(chan func(sender routing.Emitter), 100)
+	m.TraverseInput.Callback = make(chan func(sender emitter.Emitter), 100)
 	return m
 }
-func (m *mockSenderStore) Traverse(callback func(sender routing.Emitter)) {
+func (m *mockSenderStore) Traverse(callback func(sender emitter.Emitter)) {
 	m.TraverseCalled <- true
 	m.TraverseInput.Callback <- callback
 }
@@ -50,7 +50,7 @@ type mockEmitterFetcher struct {
 		Id chan string
 	}
 	FetchOutput struct {
-		Ret0 chan routing.Emitter
+		Ret0 chan emitter.Emitter
 	}
 }
 
@@ -58,10 +58,10 @@ func newMockEmitterFetcher() *mockEmitterFetcher {
 	m := &mockEmitterFetcher{}
 	m.FetchCalled = make(chan bool, 100)
 	m.FetchInput.Id = make(chan string, 100)
-	m.FetchOutput.Ret0 = make(chan routing.Emitter, 100)
+	m.FetchOutput.Ret0 = make(chan emitter.Emitter, 100)
 	return m
 }
-func (m *mockEmitterFetcher) Fetch(id string) routing.Emitter {
+func (m *mockEmitterFetcher) Fetch(id string) emitter.Emitter {
 	m.FetchCalled <- true
 	m.FetchInput.Id <- id
 	return <-m.FetchOutput.Ret0

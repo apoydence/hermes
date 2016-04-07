@@ -1,8 +1,8 @@
-package routing_test
+package emitter_test
 
 import (
 	"hermes/common/pb/messages"
-	"hermes/internal/routing"
+	"hermes/internal/emitter"
 
 	. "github.com/apoydence/eachers"
 	. "github.com/apoydence/eachers/testhelpers"
@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Router", func() {
+var _ = Describe("DataSourceReader", func() {
 	var (
 		mockDataSource     *mockDataSource
 		mockWaitReporter   *mockWaitReporter
@@ -21,7 +21,7 @@ var _ = Describe("Router", func() {
 		expectedDataPoint *messages.DataPoint
 		expectedID        string
 
-		router *routing.Router
+		dataSourceReader *emitter.DataSourceReader
 	)
 
 	BeforeEach(func() {
@@ -35,7 +35,7 @@ var _ = Describe("Router", func() {
 			Id: proto.String(expectedID),
 		}
 
-		router = routing.New(mockDataSource, mockWaitReporter, mockEmitterFetcher)
+		dataSourceReader = emitter.NewDataSourceReader(mockDataSource, mockWaitReporter, mockEmitterFetcher)
 	})
 
 	Describe("Emit()", func() {

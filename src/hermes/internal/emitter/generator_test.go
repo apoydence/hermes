@@ -1,7 +1,7 @@
-package routing_test
+package emitter_test
 
 import (
-	"hermes/internal/routing"
+	"hermes/internal/emitter"
 	"hermes/internal/tcwriter"
 
 	. "github.com/apoydence/eachers"
@@ -9,13 +9,13 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("EmitterGenerator", func() {
+var _ = Describe("Generator", func() {
 	var (
-		generator *routing.EmitterGenerator
+		generator *emitter.Generator
 
-		linkedLists   chan *routing.LinkedList
-		senderStores  chan routing.SenderStore
-		eventEmitters chan *routing.EventEmitter
+		linkedLists   chan *emitter.LinkedList
+		senderStores  chan emitter.SenderStore
+		eventEmitters chan *emitter.SubscriptionListReader
 		muxIds        chan uint64
 		msgEmitters   chan tcwriter.MessageEmitter
 		tcwriterUrls  chan string
@@ -26,17 +26,17 @@ var _ = Describe("EmitterGenerator", func() {
 		expectedId string
 	)
 
-	var origLinkedList = routing.NewLinkedList
-	var hijackLinkedList = func() *routing.LinkedList {
+	var origLinkedList = emitter.NewLinkedList
+	var hijackLinkedList = func() *emitter.LinkedList {
 		result := origLinkedList()
 		linkedLists <- result
 		return result
 	}
 
-	var origEventEmitter = routing.NewEventEmitter
-	var hijackedEventEmitter = func(store routing.SenderStore) *routing.EventEmitter {
+	var origSubscriptionListReader = emitter.NewSubscriptionListReader
+	var hijackedSubscriptionListReader = func(store emitter.SenderStore) *emitter.SubscriptionListReader {
 		senderStores <- store
-		result := origEventEmitter(store)
+		result := origSubscriptionListReader(store)
 		eventEmitters <- result
 		return result
 	}
@@ -56,18 +56,18 @@ var _ = Describe("EmitterGenerator", func() {
 	}
 
 	BeforeEach(func() {
-		routing.NewLinkedList = hijackLinkedList
-		routing.NewEventEmitter = hijackedEventEmitter
+		emitter.NewLinkedList = hijackLinkedList
+		emitter.NewSubscriptionListReader = hijackedSubscriptionListReader
 		tcwriter.NewEmitter = hijackedTcEmitter
 		tcwriter.New = hijackedNewTcWriter
 
 		mockKvStore = newMockKvStore()
 
-		generator = routing.NewEmitterGenerator(mockKvStore)
+		generator = emitter.NewGenerator(mockKvStore)
 
-		linkedLists = make(chan *routing.LinkedList, 100)
-		senderStores = make(chan routing.SenderStore, 100)
-		eventEmitters = make(chan *routing.EventEmitter, 100)
+		linkedLists = make(chan *emitter.LinkedList, 100)
+		senderStores = make(chan emitter.SenderStore, 100)
+		eventEmitters = make(chan *emitter.SubscriptionListReader, 100)
 		muxIds = make(chan uint64, 100)
 		msgEmitters = make(chan tcwriter.MessageEmitter, 100)
 		tcwriterUrls = make(chan string, 100)
@@ -77,8 +77,8 @@ var _ = Describe("EmitterGenerator", func() {
 	})
 
 	AfterEach(func() {
-		routing.NewLinkedList = origLinkedList
-		routing.NewEventEmitter = origEventEmitter
+		emitter.NewLinkedList = origLinkedList
+		emitter.NewSubscriptionListReader = origSubscriptionListReader
 		tcwriter.NewEmitter = origNewTcEmitter
 		tcwriter.New = origNewTcWriter
 	})
@@ -94,18 +94,18 @@ var _ = Describe("EmitterGenerator", func() {
 				Expect(linkedLists).To(HaveLen(1))
 			})
 
-			It("creates a new EventEmitter with the linked list", func() {
+			It("creates a new SubscriptionListReader with the linked list", func() {
 				generator.Fetch(expectedId)
 
-				var ll *routing.LinkedList
+				var ll *emitter.LinkedList
 				Expect(linkedLists).To(Receive(&ll))
 				Expect(senderStores).To(BeCalled(With(ll)))
 			})
 
-			It("returns the EventEmitter", func() {
+			It("returns the SubscriptionListReader", func() {
 				result := generator.Fetch(expectedId)
 
-				var ee *routing.EventEmitter
+				var ee *emitter.SubscriptionListReader
 				Expect(eventEmitters).To(Receive(&ee))
 				Expect(result).To(Equal(ee))
 			})
@@ -116,15 +116,15 @@ var _ = Describe("EmitterGenerator", func() {
 		Context("tcwriter construction does not return an error", func() {
 			var (
 				callback   func(URL string, muxId uint64)
-				linkedList *routing.LinkedList
+				linkedList *emitter.LinkedList
 
 				expectedURL   string
 				expectedMuxId uint64
 			)
 
-			var listLen = func(ll *routing.LinkedList) int {
+			var listLen = func(ll *emitter.LinkedList) int {
 				var count int
-				ll.Traverse(func(routing.Emitter) {
+				ll.Traverse(func(emitter.Emitter) {
 					count++
 				})
 

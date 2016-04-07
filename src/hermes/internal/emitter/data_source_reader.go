@@ -1,4 +1,4 @@
-package routing
+package emitter
 
 import (
 	"hermes/common/pb/messages"
@@ -21,14 +21,14 @@ type EmitterFetcher interface {
 	Fetch(id string) Emitter
 }
 
-type Router struct {
+type DataSourceReader struct {
 	dataSource DataSource
 	reporter   WaitReporter
 	fetcher    EmitterFetcher
 }
 
-func New(dataSource DataSource, reporter WaitReporter, fetcher EmitterFetcher) *Router {
-	r := &Router{
+func NewDataSourceReader(dataSource DataSource, reporter WaitReporter, fetcher EmitterFetcher) *DataSourceReader {
+	r := &DataSourceReader{
 		dataSource: dataSource,
 		reporter:   reporter,
 		fetcher:    fetcher,
@@ -38,7 +38,7 @@ func New(dataSource DataSource, reporter WaitReporter, fetcher EmitterFetcher) *
 	return r
 }
 
-func (r *Router) run() {
+func (r *DataSourceReader) run() {
 	for {
 		data, ok := r.dataSource.Next()
 		if !ok {

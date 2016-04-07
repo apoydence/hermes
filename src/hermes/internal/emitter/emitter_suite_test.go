@@ -1,4 +1,4 @@
-package routing_test
+package emitter_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestRouting(t *testing.T) {
+func TestEmitter(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Doppler - Routing Suite")
+	RunSpecs(t, "Emitter Suite")
 }

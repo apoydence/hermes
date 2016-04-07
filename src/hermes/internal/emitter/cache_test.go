@@ -1,19 +1,19 @@
-package routing_test
+package emitter_test
 
 import (
-	"hermes/internal/routing"
+	"hermes/internal/emitter"
 
 	. "github.com/apoydence/eachers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("EmitterCache", func() {
+var _ = Describe("Cache", func() {
 	var (
 		mockEmitterFetcher *mockEmitterFetcher
 		mockEmitter        *mockEmitter
 
-		cache      *routing.EmitterCache
+		cache      *emitter.Cache
 		expectedId string
 	)
 
@@ -21,7 +21,7 @@ var _ = Describe("EmitterCache", func() {
 		mockEmitterFetcher = newMockEmitterFetcher()
 		mockEmitter = newMockEmitter()
 
-		cache = routing.NewEmitterCache(mockEmitterFetcher)
+		cache = emitter.NewCache(mockEmitterFetcher)
 
 		expectedId = "some-id"
 	})

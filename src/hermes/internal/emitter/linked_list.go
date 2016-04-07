@@ -1,4 +1,4 @@
-package routing
+package emitter
 
 import (
 	"sync/atomic"
