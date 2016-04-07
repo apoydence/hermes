@@ -1,4 +1,4 @@
-package tcwriter
+package subscriptionwriter
 
 import (
 	"hermes/common/pb/messages"
@@ -6,20 +6,20 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type TcWriter struct {
+type SubscriptionWriter struct {
 	URL  string
 	conn *websocket.Conn
 }
 
-var New = func(URL string) (*TcWriter, error) {
-	writer := &TcWriter{
+var New = func(URL string) (*SubscriptionWriter, error) {
+	writer := &SubscriptionWriter{
 		URL: URL,
 	}
 
 	return writer, writer.connect()
 }
 
-func (w *TcWriter) EmitMessage(msg *messages.Doppler) error {
+func (w *SubscriptionWriter) EmitMessage(msg *messages.Doppler) error {
 	data, err := msg.Marshal()
 	if err != nil {
 		panic(err)
@@ -28,11 +28,11 @@ func (w *TcWriter) EmitMessage(msg *messages.Doppler) error {
 	return w.conn.WriteMessage(websocket.BinaryMessage, data)
 }
 
-func (w *TcWriter) Close() error {
+func (w *SubscriptionWriter) Close() error {
 	return w.conn.Close()
 }
 
-func (w *TcWriter) connect() error {
+func (w *SubscriptionWriter) connect() error {
 	var err error
 	w.conn, _, err = websocket.DefaultDialer.Dial(w.URL, nil)
 	return err

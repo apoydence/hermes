@@ -1,10 +1,10 @@
 //go:generate hel
-package tcwriter_test
+package subscriptionwriter_test
 
 import (
 	"fmt"
 	"hermes/common/pb/messages"
-	"hermes/internal/tcwriter"
+	"hermes/internal/subscriptionwriter"
 
 	. "github.com/apoydence/eachers"
 	"github.com/gogo/protobuf/proto"
@@ -15,7 +15,7 @@ import (
 var _ = Describe("Emitter", func() {
 	var (
 		mockMessageEmitter *mockMessageEmitter
-		emitter            *tcwriter.Emitter
+		emitter            *subscriptionwriter.Emitter
 
 		expectedMessage *messages.Doppler
 	)
@@ -31,7 +31,7 @@ var _ = Describe("Emitter", func() {
 			},
 		}
 
-		emitter = tcwriter.NewEmitter(expectedMessage.GetMuxId(), mockMessageEmitter)
+		emitter = subscriptionwriter.NewEmitter(expectedMessage.GetMuxId(), mockMessageEmitter)
 	})
 
 	Describe("Emit()", func() {

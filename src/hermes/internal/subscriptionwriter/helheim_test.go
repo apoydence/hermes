@@ -1,4 +1,4 @@
-package tcwriter_test
+package subscriptionwriter_test
 
 import "hermes/common/pb/messages"
 

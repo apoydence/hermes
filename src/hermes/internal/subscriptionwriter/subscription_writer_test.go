@@ -1,9 +1,9 @@
-package tcwriter_test
+package subscriptionwriter_test
 
 import (
 	"fmt"
 	"hermes/common/pb/messages"
-	"hermes/internal/tcwriter"
+	"hermes/internal/subscriptionwriter"
 	"net/http"
 	"net/http/httptest"
 
@@ -13,11 +13,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Tcwriter", func() {
+var _ = Describe("SubscriptionWriter", func() {
 	var (
 		mockServer *httptest.Server
 
-		writer *tcwriter.TcWriter
+		writer *subscriptionwriter.SubscriptionWriter
 
 		expectedMessage *messages.Doppler
 		msgs            chan *messages.Doppler
@@ -48,7 +48,7 @@ var _ = Describe("Tcwriter", func() {
 		mockServer = httptest.NewServer(handler)
 
 		var err error
-		writer, err = tcwriter.New(convertUrlToWs(mockServer.URL))
+		writer, err = subscriptionwriter.New(convertUrlToWs(mockServer.URL))
 		Expect(err).ToNot(HaveOccurred())
 
 		expectedMessage = &messages.Doppler{
