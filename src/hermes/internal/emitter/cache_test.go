@@ -1,6 +1,7 @@
 package emitter_test
 
 import (
+	"hermes/internal/datastructures"
 	"hermes/internal/emitter"
 
 	. "github.com/apoydence/eachers"
@@ -10,43 +11,58 @@ import (
 
 var _ = Describe("Cache", func() {
 	var (
-		mockEmitterFetcher *mockEmitterFetcher
-		mockEmitter        *mockEmitter
+		mockRegistry *mockRegistry
+		expectedList *datastructures.LinkedList
+
+		senderStores chan emitter.SenderStore
 
 		cache      *emitter.Cache
 		expectedId string
 	)
 
-	BeforeEach(func() {
-		mockEmitterFetcher = newMockEmitterFetcher()
-		mockEmitter = newMockEmitter()
+	var origSubscriptionListReader = emitter.NewSubscriptionListReader
+	var hijackedSubscriptionListReader = func(senderStore emitter.SenderStore) *emitter.SubscriptionListReader {
+		senderStores <- senderStore
+		return origSubscriptionListReader(senderStore)
+	}
 
-		cache = emitter.NewCache(mockEmitterFetcher)
+	BeforeEach(func() {
+		mockRegistry = newMockRegistry()
+		expectedList = new(datastructures.LinkedList)
+		senderStores = make(chan emitter.SenderStore, 100)
+
+		emitter.NewSubscriptionListReader = hijackedSubscriptionListReader
+
+		cache = emitter.NewCache(mockRegistry)
 
 		expectedId = "some-id"
 	})
 
+	AfterEach(func() {
+		emitter.NewSubscriptionListReader = origSubscriptionListReader
+	})
+
 	Describe("Fetch()", func() {
 		JustBeforeEach(func() {
-			close(mockEmitterFetcher.FetchOutput.Ret0)
+			close(mockRegistry.GetListOutput.Ret0)
 		})
 
-		Context("factory returns emitter", func() {
+		Context("registry returns list", func() {
 			BeforeEach(func() {
-				mockEmitterFetcher.FetchOutput.Ret0 <- mockEmitter
+				mockRegistry.GetListOutput.Ret0 <- expectedList
 			})
 
 			Context("empty cache", func() {
-				It("requests a new emitter from the factory", func() {
+				It("requests a the list from the registry", func() {
 					cache.Fetch(expectedId)
 
-					Expect(mockEmitterFetcher.FetchInput).To(BeCalled(With(expectedId)))
+					Expect(mockRegistry.GetListInput).To(BeCalled(With(expectedId)))
 				})
 
-				It("returns the expected emitter", func() {
-					emitter := cache.Fetch(expectedId)
+				It("returns the expected list", func() {
+					cache.Fetch(expectedId)
 
-					Expect(emitter).To(Equal(mockEmitter))
+					Expect(senderStores).To(Receive(Equal(expectedList)))
 				})
 
 				Context("cache has entry", func() {
@@ -57,7 +73,7 @@ var _ = Describe("Cache", func() {
 					It("only uses factory once for a given ID", func() {
 						cache.Fetch(expectedId)
 
-						Expect(mockEmitterFetcher.FetchCalled).To(HaveLen(1))
+						Expect(mockRegistry.GetListCalled).To(HaveLen(1))
 					})
 				})
 			})

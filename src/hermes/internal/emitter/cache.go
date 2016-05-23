@@ -1,23 +1,30 @@
 package emitter
 
+import "hermes/internal/datastructures"
+
+type Registry interface {
+	GetList(ID string) *datastructures.LinkedList
+}
+
 type Cache struct {
-	factory EmitterFetcher
-	cache   map[string]Emitter
+	registry Registry
+	cache    map[string]Emitter
 }
 
-func NewCache(factory EmitterFetcher) *Cache {
+func NewCache(registry Registry) *Cache {
 	return &Cache{
-		factory: factory,
-		cache:   make(map[string]Emitter),
+		registry: registry,
+		cache:    make(map[string]Emitter),
 	}
 }
 
-func (c *Cache) Fetch(id string) Emitter {
-	if emitter, ok := c.cache[id]; ok {
-		return emitter
+func (c *Cache) Fetch(ID string) Emitter {
+	if list, ok := c.cache[ID]; ok {
+		return list
 	}
 
-	emitter := c.factory.Fetch(id)
-	c.cache[id] = emitter
-	return emitter
+	list := c.registry.GetList(ID)
+	reader := NewSubscriptionListReader(list)
+	c.cache[ID] = reader
+	return reader
 }

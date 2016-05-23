@@ -6,6 +6,7 @@ import (
 	"hermes/internal/subscriptionwriter"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gorilla/websocket"
@@ -16,6 +17,7 @@ import (
 var _ = Describe("SubscriptionWriter", func() {
 	var (
 		mockServer *httptest.Server
+		handlerWg  sync.WaitGroup
 
 		writer *subscriptionwriter.SubscriptionWriter
 
@@ -34,6 +36,8 @@ var _ = Describe("SubscriptionWriter", func() {
 	}
 
 	var handler = http.HandlerFunc(func(writer http.ResponseWriter, req *http.Request) {
+		defer handlerWg.Done()
+		handlerWg.Add(1)
 		conn, err := new(websocket.Upgrader).Upgrade(writer, req, nil)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -63,6 +67,7 @@ var _ = Describe("SubscriptionWriter", func() {
 
 	AfterEach(func() {
 		mockServer.Close()
+		handlerWg.Wait()
 	})
 
 	Describe("EmitWithId()", func() {

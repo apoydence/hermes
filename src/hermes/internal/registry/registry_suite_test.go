@@ -1,4 +1,4 @@
-package consul_test
+package registry_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestConsul(t *testing.T) {
+func TestRegistry(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Consul Suite")
+	RunSpecs(t, "Registry Suite")
 }

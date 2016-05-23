@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"hermes/common/pb/messages"
 	"hermes/internal/emitter"
+	"hermes/internal/registry"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -25,7 +26,7 @@ var _ = Describe("DataFlow", func() {
 
 		dataSourceReader *emitter.DataSourceReader
 		cache            *emitter.Cache
-		generator        *emitter.Generator
+		reg              *registry.Registry
 
 		dopplerMessages chan *messages.Doppler
 		conns           chan *websocket.Conn
@@ -69,8 +70,8 @@ var _ = Describe("DataFlow", func() {
 		mockWaitReporter = newMockWaitReporter()
 		mockKvStore = newMockKvStore()
 
-		generator = emitter.NewGenerator(mockKvStore)
-		cache = emitter.NewCache(generator)
+		reg = registry.New(mockKvStore)
+		cache = emitter.NewCache(reg)
 		dataSourceReader = emitter.NewDataSourceReader(mockDataSource, mockWaitReporter, cache)
 	})
 
@@ -87,7 +88,7 @@ var _ = Describe("DataFlow", func() {
 
 	Describe("post sharding", func() {
 		var (
-			callback   func(URL string, muxId uint64)
+			callback   func(ID, URL, key string, muxId uint64, add bool)
 			expectedId string
 		)
 
@@ -118,12 +119,14 @@ var _ = Describe("DataFlow", func() {
 		Context("traffic controller has subscribed", func() {
 			var (
 				expectedMuxId uint64
+				expectedKey   string
 			)
 
 			BeforeEach(func() {
 				expectedMuxId = 101
+				expectedKey = "some-key"
 
-				callback(convertHttpToWs(mockServer.URL), expectedMuxId)
+				callback(expectedId, convertHttpToWs(mockServer.URL), expectedKey, expectedMuxId, true)
 				handlerWg.Add(1)
 
 				writeDataPoint(expectedId, 1)

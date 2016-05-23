@@ -2,6 +2,7 @@ package emitter
 
 import (
 	"hermes/common/pb/messages"
+	"hermes/internal/subscriptionwriter"
 	"unsafe"
 )
 
@@ -21,7 +22,7 @@ var NewSubscriptionListReader = func(senderStore SenderStore) *SubscriptionListR
 
 func (r *SubscriptionListReader) Emit(data *messages.DataPoint) error {
 	r.senderStore.Traverse(func(sender unsafe.Pointer) {
-		emitter := *(*Emitter)(sender)
+		emitter := *(*subscriptionwriter.Emitter)(sender)
 		emitter.Emit(data)
 	})
 	return nil

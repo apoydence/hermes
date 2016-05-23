@@ -27,8 +27,8 @@ var _ = Describe("DataSourceReader", func() {
 	BeforeEach(func() {
 		mockDataSource = newMockDataSource()
 		mockWaitReporter = newMockWaitReporter()
-		mockEmitterFetcher = newMockEmitterFetcher()
 		mockEmitter = newMockEmitter()
+		mockEmitterFetcher = newMockEmitterFetcher()
 
 		expectedID = "some-id"
 		expectedDataPoint = &messages.DataPoint{

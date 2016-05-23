@@ -1,0 +1,7 @@
+package kvstore;
+
+message Subscription{
+	required string id = 1;
+	required uint64 muxId = 2;
+	required string url = 3;
+}
