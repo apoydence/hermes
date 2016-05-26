@@ -4,33 +4,76 @@ import (
 	"fmt"
 	"hermes/common/pb/messages"
 	"hermes/internal/emitter"
+	"hermes/internal/kvstore/consul"
 	"hermes/internal/registry"
+	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"os/exec"
 	"sync"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gorilla/websocket"
+	"github.com/hashicorp/consul/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("DataFlow", func() {
 	var (
 		mockServer *httptest.Server
-		handlerWg  sync.WaitGroup
+		handlerWg  *sync.WaitGroup
 
 		mockDataSource   *mockDataSource
 		mockWaitReporter *mockWaitReporter
-		mockKvStore      *mockKvStore
 
+		consulStore      *consul.Consul
 		dataSourceReader *emitter.DataSourceReader
 		cache            *emitter.Cache
 		reg              *registry.Registry
 
+		expectedId    string
+		expectedMuxId uint64
+
 		dopplerMessages chan *messages.Doppler
 		conns           chan *websocket.Conn
+
+		consulSession *gexec.Session
+		tmpDir        string
+		consulClient  *api.Client
 	)
+
+	var _ = AfterSuite(func() {
+		consulSession.Kill()
+		consulSession.Wait("60s", "200ms")
+		Expect(os.RemoveAll(tmpDir)).To(Succeed())
+		gexec.CleanupBuildArtifacts()
+	})
+
+	var startConsul = func() {
+		consulPath, err := gexec.Build("github.com/hashicorp/consul")
+		Expect(err).ToNot(HaveOccurred())
+
+		tmpDir, err = ioutil.TempDir("", "consul")
+		Expect(err).ToNot(HaveOccurred())
+
+		consulCmd := exec.Command(consulPath, "agent", "-server", "-bootstrap-expect", "1", "-data-dir", tmpDir, "-bind", "127.0.0.1")
+		consulSession, err = gexec.Start(consulCmd, nil, nil)
+		Expect(err).ToNot(HaveOccurred())
+		Consistently(consulSession).ShouldNot(gexec.Exit())
+
+		consulClient, err = api.NewClient(api.DefaultConfig())
+		Expect(err).ToNot(HaveOccurred())
+
+		f := func() error {
+			_, _, err := consulClient.Catalog().Nodes(nil)
+			return err
+		}
+		Eventually(f, 10).Should(BeNil())
+	}
 
 	var decodeMessage = func(data []byte) *messages.Doppler {
 		msg := new(messages.Doppler)
@@ -42,59 +85,58 @@ var _ = Describe("DataFlow", func() {
 		return fmt.Sprintf("ws%s", URL[4:])
 	}
 
-	var handler = http.HandlerFunc(func(writer http.ResponseWriter, req *http.Request) {
-		defer GinkgoRecover()
-		defer handlerWg.Done()
-		conn, err := new(websocket.Upgrader).Upgrade(writer, req, nil)
-		conns <- conn
-		Expect(err).ToNot(HaveOccurred())
+	var buildHandler = func(handlerWg *sync.WaitGroup, conns chan *websocket.Conn, dopplerMessages chan *messages.Doppler) http.HandlerFunc {
+		return http.HandlerFunc(func(writer http.ResponseWriter, req *http.Request) {
+			defer GinkgoRecover()
+			defer handlerWg.Done()
+			conn, err := new(websocket.Upgrader).Upgrade(writer, req, nil)
+			conns <- conn
+			Expect(err).ToNot(HaveOccurred())
 
-		for {
-			msgType, data, err := conn.ReadMessage()
-			if err != nil {
-				return
+			for {
+				msgType, data, err := conn.ReadMessage()
+				if err != nil {
+					return
+				}
+				Expect(msgType).To(Equal(websocket.BinaryMessage))
+
+				dopplerMessages <- decodeMessage(data)
 			}
-			Expect(msgType).To(Equal(websocket.BinaryMessage))
+		})
+	}
 
-			dopplerMessages <- decodeMessage(data)
-		}
-	})
+	var setupIds = func() {
+		expectedId = fmt.Sprintf("some-id-%d", rand.Int63())
+		expectedMuxId = 101
 
-	BeforeEach(func() {
+	}
+
+	BeforeSuite(func() {
 		dopplerMessages = make(chan *messages.Doppler, 100)
 		conns = make(chan *websocket.Conn, 100)
+		handlerWg = new(sync.WaitGroup)
+		startConsul()
 
-		mockServer = httptest.NewServer(handler)
+		mockServer = httptest.NewServer(buildHandler(handlerWg, conns, dopplerMessages))
 
 		mockDataSource = newMockDataSource()
 		mockWaitReporter = newMockWaitReporter()
-		mockKvStore = newMockKvStore()
 
-		reg = registry.New(mockKvStore)
+		consulStore = consul.New(convertHttpToWs(mockServer.URL))
+		reg = registry.New(consulStore)
 		cache = emitter.NewCache(reg)
 		dataSourceReader = emitter.NewDataSourceReader(mockDataSource, mockWaitReporter, cache)
-	})
 
-	AfterEach(func() {
-		close(conns)
-		for conn := range conns {
-			Expect(conn.Close()).To(Succeed())
-		}
+		setupIds()
 
-		mockServer.CloseClientConnections()
-		mockServer.Close()
-		handlerWg.Wait()
+		consulStore.Subscribe(expectedId, expectedMuxId)
+		handlerWg.Add(1)
+
+		Eventually(conns, 5).ShouldNot(BeEmpty())
 	})
 
 	Describe("post sharding", func() {
-		var (
-			callback   func(ID, URL, key string, muxId uint64, add bool)
-			expectedId string
-		)
-
-		var fetchKvStoreCallback = func() {
-			Eventually(mockKvStore.ListenForInput.Callback).Should(Receive(&callback))
-		}
+		var ()
 
 		var buildData = func(dataIndex int) []byte {
 			return []byte(fmt.Sprintf("some-data-%d", dataIndex))
@@ -109,26 +151,10 @@ var _ = Describe("DataFlow", func() {
 			mockDataSource.NextOutput.Ret1 <- true
 		}
 
-		BeforeEach(func() {
-			expectedId = "some-id"
-			writeDataPoint(expectedId, 0)
-
-			fetchKvStoreCallback()
-		})
-
 		Context("traffic controller has subscribed", func() {
-			var (
-				expectedMuxId uint64
-				expectedKey   string
-			)
+			var ()
 
 			BeforeEach(func() {
-				expectedMuxId = 101
-				expectedKey = "some-key"
-
-				callback(expectedId, convertHttpToWs(mockServer.URL), expectedKey, expectedMuxId, true)
-				handlerWg.Add(1)
-
 				writeDataPoint(expectedId, 1)
 			})
 

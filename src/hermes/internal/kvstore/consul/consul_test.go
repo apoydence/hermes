@@ -70,7 +70,7 @@ var _ = Describe("Consul", func() {
 				client.Subscribe(expectedId1, expectedMuxId1)
 				client.Subscribe(expectedId1, expectedMuxId2)
 
-				client.ListenFor(expectedId1, callback)
+				client.ListenFor(callback)
 			})
 
 			It("calls ListenFor callback for each entry", func() {

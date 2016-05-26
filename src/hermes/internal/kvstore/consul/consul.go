@@ -43,8 +43,8 @@ func (c *Consul) Subscribe(id string, muxId uint64) {
 	}
 }
 
-func (c *Consul) ListenFor(id string, callback func(id, URL, key string, muxId uint64, add bool)) {
-	go c.listenFor(id, callback)
+func (c *Consul) ListenFor(callback func(id, URL, key string, muxId uint64, add bool)) {
+	go c.listenFor(callback)
 }
 
 func (c *Consul) Remove(key string) {
@@ -54,7 +54,7 @@ func (c *Consul) Remove(key string) {
 	}
 }
 
-func (c *Consul) listenFor(id string, callback func(id, URL, key string, muxId uint64, add bool)) {
+func (c *Consul) listenFor(callback func(id, URL, key string, muxId uint64, add bool)) {
 	var options *api.QueryOptions
 
 	for {
@@ -74,7 +74,7 @@ func (c *Consul) listenFor(id string, callback func(id, URL, key string, muxId u
 			if sub == nil {
 				continue
 			}
-			callback(sub.GetId(), sub.GetUrl(), pair.Key, sub.GetMuxId(), true)
+			callback(sub.GetId(), sub.GetUrl(), pair.Key[len(SubscriptionPrefix)+1:], sub.GetMuxId(), true)
 		}
 	}
 }

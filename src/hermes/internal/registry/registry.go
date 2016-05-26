@@ -3,6 +3,7 @@ package registry
 import (
 	"hermes/internal/datastructures"
 	"hermes/internal/subscriptionwriter"
+	"sync"
 	"unsafe"
 )
 
@@ -14,6 +15,7 @@ type KvStore interface {
 type Registry struct {
 	lists   map[string]*datastructures.LinkedList
 	kvstore KvStore
+	lock    sync.Mutex
 }
 
 func New(kvstore KvStore) *Registry {
@@ -26,6 +28,8 @@ func New(kvstore KvStore) *Registry {
 }
 
 func (r *Registry) GetList(ID string) *datastructures.LinkedList {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	if list, ok := r.lists[ID]; ok {
 		return list
 	}
