@@ -136,8 +136,6 @@ var _ = Describe("DataFlow", func() {
 	})
 
 	Describe("post sharding", func() {
-		var ()
-
 		var buildData = func(dataIndex int) []byte {
 			return []byte(fmt.Sprintf("some-data-%d", dataIndex))
 		}
