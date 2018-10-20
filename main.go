@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/apoydence/hermes/handlers"
+	"github.com/poy/hermes/handlers"
 	"net/http"
 	"time"
 )

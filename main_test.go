@@ -9,7 +9,7 @@ import (
 
 var _ = Describe("Main", func() {
 	It("compiles", func() {
-		_, err := gexec.Build("github.com/apoydence/hermes")
+		_, err := gexec.Build("github.com/poy/hermes")
 		Expect(err).ToNot(HaveOccurred())
 	})
 })

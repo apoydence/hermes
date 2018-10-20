@@ -2,7 +2,7 @@ package handlers_test
 
 import (
 	"errors"
-	"github.com/apoydence/hermes/handlers"
+	"github.com/poy/hermes/handlers"
 	"io"
 )
 

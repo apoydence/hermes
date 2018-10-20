@@ -1,7 +1,7 @@
 package handlers_test
 
 import (
-	"github.com/apoydence/hermes/handlers"
+	"github.com/poy/hermes/handlers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

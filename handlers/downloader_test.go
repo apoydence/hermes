@@ -2,7 +2,7 @@ package handlers_test
 
 import (
 	"bytes"
-	"github.com/apoydence/hermes/handlers"
+	"github.com/poy/hermes/handlers"
 	"io/ioutil"
 	"net/http"
 
